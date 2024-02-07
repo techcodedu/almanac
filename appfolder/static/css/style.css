@@ -1,0 +1,17 @@
+.suggestions-container {
+  position: absolute;
+  border: 1px solid #ddd;
+  border-top: none;
+  z-index: 1000;
+  width: calc(100% - 32px); /* Adjust the width based on padding/margins */
+  background: white;
+}
+
+.suggestion-item {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background-color: #f0f0f0;
+}

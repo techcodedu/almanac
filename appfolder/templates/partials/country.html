@@ -1,0 +1,20 @@
+<!-- _country.html -->
+<div class="country-item mb-3">
+  <div class="card">
+    <div class="row g-0 align-items-center">
+      <div class="col-md-4">
+        <img
+          src="{{ url_for('static', filename=country.image_path) }}"
+          class="img-fluid rounded-start"
+          alt="Flag of {{ country.image_path }}"
+        />
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <h5 class="card-title">{{ country.name }}</h5>
+          <p class="card-text">Capital: {{ country.capital_city }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

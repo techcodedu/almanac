@@ -1,0 +1,34 @@
+{% extends "layout.html" %} {% block content %}
+<div class="row">
+  <div class="col-12">
+    <h1 class="text-center mb-4">Countries and Capitals</h1>
+    <div class="input-group mb-3">
+      <input
+        type="text"
+        class="form-control"
+        id="searchInput"
+        placeholder="Search country..."
+        autocomplete="off"
+      />
+      <button class="btn btn-outline-secondary" type="button" id="searchButton">
+        Search
+      </button>
+    </div>
+    <div id="searchSuggestions" class="suggestions-container"></div>
+    <!-- Suggestions container moved here -->
+  </div>
+</div>
+<div class="row">
+  <div class="col-12">
+    <div id="countriesList">
+      <!-- The country data will be inserted here by JavaScript -->
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-12 d-flex justify-content-between">
+    <button class="btn btn-primary" id="prevButton">Previous</button>
+    <button class="btn btn-primary" id="nextButton">Next</button>
+  </div>
+</div>
+{% endblock %}
