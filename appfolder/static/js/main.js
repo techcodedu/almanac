@@ -2,8 +2,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // DOM elements
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("searchButton");
+  const prevButton = document.getElementById("prevButton");
+  const nextButton = document.getElementById("nextButton");
   const countriesList = document.getElementById("countriesList");
   const suggestionsContainer = document.getElementById("searchSuggestions");
+
+  let currentCountryIndex = 0; // Index for the next/previous buttons
 
   // Function to clear suggestions
   const clearSuggestions = () => {
@@ -13,52 +17,83 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Function to update the country display
   const updateCountry = (country) => {
-    if (country && country.name) {
-      const imagePath = `/static/images/flags/${country.name.toLowerCase()}.png`;
-      countriesList.innerHTML = `
-          <div class="country-item mb-3">
-              <div class="card">
-                  <div class="row g-0 align-items-center">
-                      <div class="col-md-4">
-                          <img src="${imagePath}" class="img-fluid rounded-start" alt="Flag of ${country.name}">
-                      </div>
-                      <div class="col-md-8">
-                          <div class="card-body">
-                              <h5 class="card-title">${country.name}</h5>
-                              <p class="card-text">Capital: ${country.capital_city}</p>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      `;
-    } else {
-      countriesList.innerHTML = "<p>Country data is not available.</p>";
-    }
+    // Ensure the path is correct relative to the 'static' directory
+    const imagePath = `/static/images/flags/${country.name.toLowerCase()}.png`;
+    countriesList.innerHTML = `
+        <div class="country-item mb-3">
+            <div class="card">
+                <div class="row g-0 align-items-center">
+                    <div class="col-md-4">
+                        <img src="${imagePath}" class="img-fluid rounded-start" alt="Flag of ${country.name}">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title">${country.name}</h5>
+                            <p class="card-text">Capital: ${country.capital_city}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
   };
 
-  // Function to handle search and fetch countries
-  const handleSearch = (searchTerm) => {
-    fetch(`/search?term=${encodeURIComponent(searchTerm)}`)
+  // Fetch country by index for next/previous functionality
+  const fetchCountryByIndex = (index) => {
+    fetch("/fetch-countries", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ index: index }),
+    })
       .then((response) => response.json())
-      .then((countries) => {
-        if (countries.length > 0) {
-          // If the search term is not empty, display the first result
-          if (searchTerm.length > 0) {
-            updateCountry(countries[0]);
-          } else {
-            // If the search term is empty, display all results
-            countriesList.innerHTML = ""; // Clear the list
-            countries.forEach(updateCountry);
-          }
+      .then((data) => {
+        if (data && !data.error) {
+          updateCountry(data);
         } else {
-          countriesList.innerHTML = "<p>No countries found.</p>";
+          console.error(data.error || "Error fetching country by index.");
         }
-        clearSuggestions(); // Clear suggestions
       })
       .catch((error) => {
         console.error("Error:", error);
       });
+  };
+
+  // Event listeners for the pagination buttons
+  prevButton.addEventListener("click", function () {
+    if (currentCountryIndex > 0) {
+      currentCountryIndex -= 1;
+      fetchCountryByIndex(currentCountryIndex);
+    }
+  });
+
+  nextButton.addEventListener("click", function () {
+    // Assuming we don't know the total number of countries,
+    // we will attempt to fetch the next country. If there isn't one,
+    // an error will be logged to the console.
+    currentCountryIndex += 1;
+    fetchCountryByIndex(currentCountryIndex);
+  });
+
+  // Function to handle the search action
+  const handleSearch = () => {
+    const searchTerm = searchInput.value.trim();
+    if (searchTerm) {
+      fetch(`/search?term=${encodeURIComponent(searchTerm)}`)
+        .then((response) => response.json())
+        .then((countries) => {
+          if (countries && countries.length > 0) {
+            updateCountry(countries[0]); // Display the first result
+            clearSuggestions();
+          } else {
+            countriesList.innerHTML = "<p>No countries found.</p>";
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
   };
 
   // Input event for search suggestions
@@ -69,15 +104,16 @@ document.addEventListener("DOMContentLoaded", function () {
       suggestionsContainer.style.display = "block";
       fetch(`/search?term=${encodeURIComponent(searchTerm)}`)
         .then((response) => response.json())
-        .then((suggestions) => {
+        .then((countries) => {
           suggestionsContainer.innerHTML = ""; // Clear previous suggestions
-          suggestions.forEach((suggestion) => {
+          countries.forEach((country) => {
             const suggestionItem = document.createElement("div");
             suggestionItem.classList.add("suggestion-item");
-            suggestionItem.textContent = suggestion;
+            suggestionItem.textContent = country.name; // Use country.name for text
             suggestionItem.addEventListener("click", () => {
-              searchInput.value = suggestion;
-              handleSearch(suggestion);
+              searchInput.value = country.name;
+              updateCountry(country); // Update display with the clicked country
+              clearSuggestions();
             });
             suggestionsContainer.appendChild(suggestionItem);
           });
@@ -91,28 +127,8 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Search button click event
-  searchButton.addEventListener("click", () => {
-    const searchTerm = searchInput.value.trim();
-    handleSearch(searchTerm);
-  });
+  searchButton.addEventListener("click", handleSearch);
 
   // Fetch the first country when the page loads
-  fetch("/fetch-countries", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ index: 0 }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (!data.error) {
-        updateCountry(data);
-      } else {
-        console.log(data.error);
-      }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+  fetchCountryByIndex(currentCountryIndex);
 });
